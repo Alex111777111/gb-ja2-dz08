@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class ClientHandler {
+    private static final long AUTH_TIMEOUT = 120000;
+
     private String nickname;
     private Server server;
     private Socket socket;
@@ -22,6 +24,7 @@ public class ClientHandler {
             this.socket = socket;
             this.in = new DataInputStream(socket.getInputStream());
             this.out = new DataOutputStream(socket.getOutputStream());
+            startAuthorizeTimeout();
             new Thread(() -> {
                 try {
                     while (true) {
@@ -62,6 +65,21 @@ public class ClientHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void startAuthorizeTimeout() {
+        new Thread(() -> {
+            try {
+                Thread.currentThread().sleep(AUTH_TIMEOUT);
+                if (nickname == null) {
+                    in.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        })
+        .start();
+
     }
 
     public void sendMsg(String msg) {
